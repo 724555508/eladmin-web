@@ -164,10 +164,10 @@
 
         <el-table-column v-permission="['admin','task:edit','task:del']" label="操作" width="200" align="center" fixed="right" >
           <template slot-scope="scope">
-             <el-button v-if="scope.row.status == 1" type="primary" >审核成功</el-button>
-             <el-button v-if="scope.row.status == 1" type="danger" >审核失败</el-button>
-             <el-button v-if="scope.row.status == 2" type="warning" @click="taskClose">下架</el-button>
-             <el-button v-if="scope.row.status == 3" type="success" @click="taskOpen">上架</el-button>
+             <el-button v-if="scope.row.status == 1" type="primary" @click="taskSuccess(scope.row.id)">审核成功</el-button>
+             <el-button v-if="scope.row.status == 1" type="danger" @click="taskFail(scope.row.id)">审核失败</el-button>
+             <el-button v-if="scope.row.status == 2" type="warning" @click="taskClose(scope.row.id)">下架</el-button>
+             <el-button v-if="scope.row.status == 3" type="success" @click="taskOpen(scope.row.id)">上架</el-button>
           </template>
 
         </el-table-column>
@@ -241,14 +241,22 @@ export default {
       }
       return true
     },
-    taskOpen() {
+    taskSuccess(id){
 
     },
-    taskClose() {
+    taskFail(id){
+
+    },
+    taskOpen(id) {
+
+    },
+    taskClose(id) {
       request({
-        url: 'api/task',
+        url: 'api/task/close',
         method: 'post',
-        data:{}
+        data:{
+          id:id
+        }
       })
     }
 
