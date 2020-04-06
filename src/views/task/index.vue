@@ -11,7 +11,64 @@
         <rrOperation :crud="crud" />
       </div>
       <!--如果想在工具栏加入更多按钮，可以使用插槽方式， slot = 'left' or 'right'-->
-      <!-- <crudOperation :permission="permission" /> -->
+      <crudOperation :permission="permission">
+
+        <template slot="right">
+          <el-button
+            slot="reference"
+            v-permission="permission.open"
+            class="filter-item"
+            type="success"
+            icon="el-icon-edit"
+            size="mini"
+            :loading="crud.delAllLoading"
+            :disabled="crud.selections.length === 0"
+            @click="taskOpen(crud.selections)"
+          >
+            上架
+          </el-button>
+          <el-button
+            slot="reference"
+            v-permission="permission.close"
+            class="filter-item"
+            type="warning"
+            icon="el-icon-edit"
+            size="mini"
+            :loading="crud.delAllLoading"
+            :disabled="crud.selections.length === 0"
+            @click="taskClose(crud.selections)"
+          >
+            下架
+          </el-button>
+          <el-button
+            slot="reference"
+            v-permission="permission.checkSuccess"
+            class="filter-item"
+            type="success"
+            icon="el-icon-edit"
+            size="mini"
+            :loading="crud.delAllLoading"
+            :disabled="crud.selections.length === 0"
+            @click="taskSuccess(crud.selections)"
+          >
+            审核成功
+          </el-button>
+          <el-button
+            slot="reference"
+            v-permission="permission.checkFailure"
+            class="filter-item"
+            type="danger"
+            icon="el-icon-edit"
+            size="mini"
+            :loading="crud.delAllLoading"
+            :disabled="crud.selections.length === 0"
+            @click="taskFail(crud.selections)"
+          >
+            审核失败
+          </el-button>
+        </template>
+      </crudOperation>
+
       <!--表单组件-->
       <el-dialog :close-on-click-modal="false" :before-close="crud.cancelCU" :visible.sync="crud.status.cu > 0" :title="crud.status.title" width="500px">
         <el-form ref="form" :model="form" :rules="rules" size="small" label-width="80px">
@@ -162,12 +219,12 @@
           </template>
         </el-table-column>
 
-        <el-table-column v-permission="['admin','task:edit','task:del']" label="操作" width="200" align="center" fixed="right" >
+        <el-table-column label="操作" width="200" align="center" fixed="right" >
           <template slot-scope="scope">
-             <el-button v-if="scope.row.status == 1" type="primary" @click="taskSuccess(scope.row.id)">审核成功</el-button>
-             <el-button v-if="scope.row.status == 1" type="danger" @click="taskFail(scope.row.id)">审核失败</el-button>
-             <el-button v-if="scope.row.status == 2" type="warning" @click="taskClose(scope.row.id)">下架</el-button>
-             <el-button v-if="scope.row.status == 3" type="success" @click="taskOpen(scope.row.id)">上架</el-button>
+             <el-button v-if="scope.row.status == 1" v-permission="permission.checkSuccess" type="success" @click="taskSuccess(scope.row)">审核成功</el-button>
+             <el-button v-if="scope.row.status == 1" v-permission="permission.checkFailure" type="danger" @click="taskFail(scope.row)">审核失败</el-button>
+             <el-button v-if="scope.row.status == 2" v-permission="permission.close" type="warning" @click="taskClose(scope.row)">下架</el-button>
+             <el-button v-if="scope.row.status == 3" v-permission="permission.open" type="success" @click="taskOpen(scope.row)">上架</el-button>
           </template>
 
         </el-table-column>
@@ -199,8 +256,12 @@ export default {
     return {
       permission: {
         add: ['admin', 'task:add'],
-        edit: ['admin', 'task:edit'],
-        del: ['admin', 'task:del']
+        edit: [''],
+        del: [''],
+        close: ['admin', 'task:close'],
+        open: ['admin', 'task:open'],
+        checkSuccess: ['admin', 'task:checkSuccess'],
+        checkFailure: ['admin', 'task:checkFailure']
       },
       rules: {
         id: [
@@ -241,23 +302,50 @@ export default {
       }
       return true
     },
-    taskSuccess(id){
-
+    taskSuccess(data){
+      request({
+        url: 'api/task/checkSuccess',
+        method: 'post',
+        data:this.getIds(data)
+      })
     },
-    taskFail(id){
-
+    taskFail(data){
+      request({
+        url: 'api/task/checkFailure',
+        method: 'post',
+        data:this.getIds(data)
+      })
     },
-    taskOpen(id) {
-
+    taskOpen(data) {
+      var _this = this;
+      const res = request({
+        url: 'api/task/open',
+        method: 'post',
+        data:this.getIds(data)
+      }).then(() => {
+        this.crud.refresh();
+      })
     },
-    taskClose(id) {
+    taskClose(data) {
+      var _this = this;
       request({
         url: 'api/task/close',
         method: 'post',
-        data:{
-          id:id
-        }
+        data:this.getIds(data)
+      }).then(() => {
+        this.crud.refresh();
       })
+    },
+    getIds(data){
+      const ids = [];
+      if (data instanceof Array) {
+        data.forEach(val => {
+          ids.push(val.id)
+        })
+      } else {
+        ids.push(data.id)
+      }
+      return ids;
     }
 
   }
